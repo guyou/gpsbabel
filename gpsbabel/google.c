@@ -22,8 +22,6 @@
 
 static char* encoded_points = NULL;
 static char* instructions = NULL;
-static route_head** routehead;
-static int* routecount;
 static short_handle desc_handle;
 
 #define MYNAME "google"
@@ -77,7 +75,6 @@ void goog_instr(const char* args, const char** unused)
   }
 }
 
-static int goog_segroute = 0;
 static int goog_step = 0;
 
 static long decode_goog64(char** str)
@@ -108,27 +105,27 @@ void goog_poly_e(const char* args, const char** unused)
   long lon = 0;
   char* str = encoded_points;
 
-  routehead[goog_segroute] = route_head_alloc();
+  route_head* routehead = route_head_alloc();
   if (strcmp (args, "overview_polyline") == 0) {
-    routehead[goog_segroute]->rte_name = (char*) xstrdup("overview");
-    routehead[goog_segroute]->rte_desc = (char*) xstrdup("Overview");
+    routehead->rte_name = (char*) xstrdup("overview");
+    routehead->rte_desc = (char*) xstrdup("Overview");
   } else {
 	goog_step++;
-    routehead[goog_segroute]->rte_name = (char*) xmalloc(8);
-    sprintf(routehead[goog_segroute]->rte_name, "step%03d", goog_step);
+    routehead->rte_name = (char*) xmalloc(8);
+    sprintf(routehead->rte_name, "step%03d", goog_step);
     if (instructions == NULL) {
-      routehead[goog_segroute]->rte_desc = (char*) xmalloc(9);
-      sprintf(routehead[goog_segroute]->rte_desc, "Step %d", goog_step);
+      routehead->rte_desc = (char*) xmalloc(9);
+      sprintf(routehead->rte_desc, "Step %d", goog_step);
     } else {
       utf_string utf;
       utf.is_html = 1;
       utf.utfstring = instructions;
-      routehead[goog_segroute]->rte_desc = strip_html(&utf);
+      routehead->rte_desc = strip_html(&utf);
       xfree(instructions);
       instructions = NULL;
 	}
   }
-  route_add_head(routehead[goog_segroute]);
+  route_add_head(routehead);
 
   while (str && *str) {
     lat += decode_goog64(&str);
@@ -142,7 +139,7 @@ void goog_poly_e(const char* args, const char** unused)
       wpt_tmp->shortname = (char*) xmalloc(7);
       sprintf(wpt_tmp->shortname, "\\%5.5x", serial++);
       */
-      route_add_wpt(routehead[goog_segroute], wpt_tmp);
+      route_add_wpt(routehead, wpt_tmp);
     }
   }
 
@@ -168,11 +165,7 @@ google_rd_init(const char* fname)
 static void
 google_read(void)
 {
-  routehead = (route_head**)xmalloc(sizeof(route_head*));
-  goog_segroute = 0;
   xml_read();
-  xfree(routehead);
-  xfree(routecount);
 
   if (encoded_points) {
     xfree(encoded_points);
