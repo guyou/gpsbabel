@@ -20,7 +20,7 @@
 #include "xmlgeneric.h"
 
 static char* encoded_points = NULL;
-static char* encoded_levels = NULL;
+static char* instructions = NULL;
 static route_head** routehead;
 static int* routecount;
 static short_handle desc_handle;
@@ -44,13 +44,15 @@ google_read(void)
 #else
 
 static xg_callback      goog_points, goog_poly_e;
+static xg_callback      goog_instr;
 
 static
 xg_tag_mapping google_map[] = {
   { goog_points,  cb_cdata,       "/DirectionsResponse/route/overview_polyline/points" },
   { goog_poly_e,  cb_end,         "/DirectionsResponse/route/overview_polyline" },
   { goog_points,  cb_cdata,       "/DirectionsResponse/route/leg/step/polyline/points" },
-  { goog_poly_e,  cb_end,         "/DirectionsResponse/route/leg/step/polyline" },
+  { goog_poly_e,  cb_end,         "/DirectionsResponse/route/leg/step" },
+  { goog_instr,  cb_cdata,        "/DirectionsResponse/route/leg/step/html_instructions" },
   { NULL, (xg_cb_type)0,              NULL }
 };
 
@@ -61,6 +63,18 @@ void goog_points(const char* args, const char** unused)
       encoded_points = xstrappend(encoded_points, args);
     } else {
       encoded_points = xstrdup(args);
+    }
+  }
+}
+
+void goog_instr(const char* args, const char** unused)
+{
+	fprintf(stderr, "DEBUG: %s: %s\n", __FUNCTION__, args);
+  if (args) {
+    if (instructions) {
+      instructions = xstrappend(instructions, args);
+    } else {
+      instructions = xstrdup(args);
     }
   }
 }
@@ -94,11 +108,7 @@ void goog_poly_e(const char* args, const char** unused)
 {
   long lat = 0;
   long lon = 0;
-  long level = 0;
-  long level1 = -9999;
-  long level2 = -9999;
   char* str = encoded_points;
-  char* lstr = encoded_levels;
 
 	fprintf(stderr, "DEBUG: %s: %s\n", __FUNCTION__, args);
 
@@ -110,9 +120,13 @@ void goog_poly_e(const char* args, const char** unused)
 	goog_step++;
     routehead[goog_segroute]->rte_name = (char*) xmalloc(8);
     sprintf(routehead[goog_segroute]->rte_name, "step%03d", goog_step);
-    routehead[goog_segroute]->rte_desc = (char*) xstrdup("Overview");
-    routehead[goog_segroute]->rte_desc = (char*) xmalloc(9);
-    sprintf(routehead[goog_segroute]->rte_desc, "Step %d", goog_step);
+    if (instructions == NULL) {
+      routehead[goog_segroute]->rte_desc = (char*) xmalloc(9);
+      sprintf(routehead[goog_segroute]->rte_desc, "Step %d", goog_step);
+    } else {
+      routehead[goog_segroute]->rte_desc = instructions;
+      instructions = NULL;
+	}
   }
   route_add_head(routehead[goog_segroute]);
   routecount[goog_segroute] = serial;
@@ -121,25 +135,10 @@ void goog_poly_e(const char* args, const char** unused)
     lat += decode_goog64(&str);
     lon += decode_goog64(&str);
 
-    level = -1;
-    level2 = level1;
-    if (lstr && *lstr) {
-      level1 = -decode_goog64(&lstr);
-    } else {
-      level1 = -9999;
-    }
-    level = (level1<level2)?level1:level2;
-
-    /* level of -9999 happens for endpoints */
-    if (level == -9999) {
-      level = 99999;
-    }
-
     {
       waypoint* wpt_tmp = waypt_new();
       wpt_tmp->latitude = lat / 100000.0;
       wpt_tmp->longitude = lon / 100000.0;
-      wpt_tmp->route_priority=level;
       /* FIXME no need for name
       wpt_tmp->shortname = (char*) xmalloc(7);
       sprintf(wpt_tmp->shortname, "\\%5.5x", serial++);
@@ -151,6 +150,10 @@ void goog_poly_e(const char* args, const char** unused)
   if (encoded_points) {
     xfree(encoded_points);
     encoded_points = NULL;
+  }
+  if (instructions) {
+    xfree(instructions);
+    instructions = NULL;
   }
 }
 
@@ -177,9 +180,9 @@ google_read(void)
     xfree(encoded_points);
     encoded_points = NULL;
   }
-  if (encoded_levels) {
-    xfree(encoded_levels);
-    encoded_levels = NULL;
+  if (instructions) {
+    xfree(instructions);
+    instructions = NULL;
   }
 }
 #endif
