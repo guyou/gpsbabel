@@ -1,5 +1,6 @@
 /*
     Copyright (C) 2002 Robert Lipe, robertlipe@usa.net
+    Copyright (C) 2012 Guilhem Bonnefille, guilhem.bonnefille@gmail.com
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -24,8 +25,6 @@ static char* instructions = NULL;
 static route_head** routehead;
 static int* routecount;
 static short_handle desc_handle;
-
-static int serial = 0;
 
 #define MYNAME "google"
 #define MY_CBUF 4096
@@ -129,7 +128,6 @@ void goog_poly_e(const char* args, const char** unused)
 	}
   }
   route_add_head(routehead[goog_segroute]);
-  routecount[goog_segroute] = serial;
 
   while (str && *str) {
     lat += decode_goog64(&str);
@@ -170,7 +168,6 @@ static void
 google_read(void)
 {
   routehead = (route_head**)xmalloc(sizeof(route_head*));
-  routecount = (int*)xmalloc(sizeof(int));
   goog_segroute = 0;
   xml_read();
   xfree(routehead);
