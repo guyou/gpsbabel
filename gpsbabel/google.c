@@ -68,7 +68,6 @@ void goog_points(const char* args, const char** unused)
 
 void goog_instr(const char* args, const char** unused)
 {
-	fprintf(stderr, "DEBUG: %s: %s\n", __FUNCTION__, args);
   if (args) {
     if (instructions) {
       instructions = xstrappend(instructions, args);
@@ -108,8 +107,6 @@ void goog_poly_e(const char* args, const char** unused)
   long lat = 0;
   long lon = 0;
   char* str = encoded_points;
-
-	fprintf(stderr, "DEBUG: %s: %s\n", __FUNCTION__, args);
 
   routehead[goog_segroute] = route_head_alloc();
   if (strcmp (args, "overview_polyline") == 0) {
