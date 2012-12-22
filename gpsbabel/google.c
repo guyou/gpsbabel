@@ -17,6 +17,10 @@
     Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111 USA
 
  */
+/*
+ * Parse the output of the following command:
+ * curl "http://maps.googleapis.com/maps/api/directions/xml?origin='Albi,%20france'&destination='toulouse,%20france'&sensor=false" > google-direction.xml
+ */
 #include "defs.h"
 #include "xmlgeneric.h"
 
@@ -49,7 +53,7 @@ xg_tag_mapping google_map[] = {
   { goog_poly_e,  cb_end,         "/DirectionsResponse/route/overview_polyline" },
   { goog_points,  cb_cdata,       "/DirectionsResponse/route/leg/step/polyline/points" },
   { goog_poly_e,  cb_end,         "/DirectionsResponse/route/leg/step" },
-  { goog_instr,  cb_cdata,        "/DirectionsResponse/route/leg/step/html_instructions" },
+  { goog_instr,   cb_cdata,       "/DirectionsResponse/route/leg/step/html_instructions" },
   { NULL, (xg_cb_type)0,              NULL }
 };
 
