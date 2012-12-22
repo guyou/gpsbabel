@@ -50,12 +50,16 @@ static xg_callback	goog_td_e;
 
 static
 xg_tag_mapping google_map[] = {
-  { goog_points,  cb_cdata,       "/page/directions/polyline/points" },
+  { goog_points,  cb_cdata,       "/DirectionsResponse/route/overview_polyline/points" },
+/* FIXME no corresponding tag
   { goog_levels,  cb_cdata,       "/page/directions/polyline/levels" },
-  { goog_poly_e,  cb_end,         "/page/directions/polyline" },
+*/
+  { goog_poly_e,  cb_end,         "/DirectionsResponse/route/overview_polyline" },
   { goog_script,  cb_cdata,       "/html/head/script" },
+/* FIXME no corresponding tag
   { goog_segment_s, cb_start,      "/page/directions/segments/segment" },
   { goog_segment, cb_cdata,      "/page/directions/segments/segment" },
+*/
   { goog_td_s,    cb_start,      "/div/table/tr/td" },
   { goog_td_s,    cb_start,      "/div/div/table/tr/td" },
   { goog_td_b,      cb_cdata,      "/div/table/tr/td/b" },
