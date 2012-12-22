@@ -1,6 +1,9 @@
 From: Guilhem Bonnefille <guilhem.bonnefille@gmail.com>
-Subject: [PATCH] t/google/update-direction-api
+Subject: [PATCH] Update the google module to new API
 
-<patch description>
+Google introduces an API to request directions.
+https://developers.google.com/maps/documentation/directions/
+
+This patch replace the google support to support the XML output.
 
 Signed-off-by: Guilhem Bonnefille <guilhem.bonnefille@gmail.com>
