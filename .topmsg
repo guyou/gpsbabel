@@ -4,6 +4,10 @@ Subject: [PATCH] Update the google module to new API
 Google introduces an API to request directions.
 https://developers.google.com/maps/documentation/directions/
 
-This patch replace the google support to support the XML output.
+This patch replaces the google support to support the XML output.
+
+The support is minimal, it converts all routes:
+- the global overview
+- any steps
 
 Signed-off-by: Guilhem Bonnefille <guilhem.bonnefille@gmail.com>
