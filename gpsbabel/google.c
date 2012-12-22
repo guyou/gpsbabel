@@ -44,41 +44,19 @@ google_read(void)
 }
 #else
 
-static xg_callback      goog_points, goog_levels, goog_poly_e, goog_script;
-static xg_callback	goog_segment_s, goog_segment, goog_td_s, goog_td_b;
-static xg_callback	goog_td_e;
+static xg_callback      goog_points, goog_poly_e;
+static xg_callback      goog_over_e, goog_over_s;
 
 static
 xg_tag_mapping google_map[] = {
+  { goog_over_s,  cb_start,       "/DirectionsResponse/route/overview_polyline" },
+  { goog_over_e,  cb_end,         "/DirectionsResponse/route/overview_polyline" },
   { goog_points,  cb_cdata,       "/DirectionsResponse/route/overview_polyline/points" },
-/* FIXME no corresponding tag
-  { goog_levels,  cb_cdata,       "/page/directions/polyline/levels" },
-*/
-  { goog_poly_e,  cb_end,         "/DirectionsResponse/route/overview_polyline" },
-  { goog_script,  cb_cdata,       "/html/head/script" },
-/* FIXME no corresponding tag
-  { goog_segment_s, cb_start,      "/page/directions/segments/segment" },
-  { goog_segment, cb_cdata,      "/page/directions/segments/segment" },
-*/
-  { goog_td_s,    cb_start,      "/div/table/tr/td" },
-  { goog_td_s,    cb_start,      "/div/div/table/tr/td" },
-  { goog_td_b,      cb_cdata,      "/div/table/tr/td/b" },
-  { goog_td_b,      cb_cdata,      "/div/div/table/tr/td/b" },
-  { goog_td_e,    cb_end,        "/div/table/tr/td" },
-  { goog_td_e,    cb_end,        "/div/div/table/tr/td" },
+  { goog_poly_e,  cb_end,         "/DirectionsResponse/route/overview_polyline/points" },
+  { goog_points,  cb_cdata,       "/DirectionsResponse/route/leg/step/polyline/points" },
+  { goog_poly_e,  cb_end,         "/DirectionsResponse/route/leg/step/polyline" },
   { NULL, (xg_cb_type)0,              NULL }
 };
-
-void goog_script(const char* args, const char** unused)
-{
-  if (args) {
-    if (script) {
-      script = xstrappend(script, args);
-    } else {
-      script = xstrdup(args);
-    }
-  }
-}
 
 void goog_points(const char* args, const char** unused)
 {
@@ -91,98 +69,21 @@ void goog_points(const char* args, const char** unused)
   }
 }
 
-void goog_levels(const char* args, const char** unused)
-{
-  if (args) {
-    if (encoded_levels) {
-      encoded_levels = xstrappend(encoded_levels, args);
-    } else {
-      encoded_levels = xstrdup(args);
-    }
-  }
-}
-
 static char goog_segname[7];
 static char* goog_realname = NULL;
 static int goog_segroute = 0;
+static int goog_over = 0;
 
-/*
- * The segments contain an index into the points array.  We use that
- * index to find the waypoint and insert a better name for it.
- */
-void goog_segment_s(const char* args, const char** attrv)
+void goog_over_s(const char* args, const char** unused)
 {
-  const char** avp = &attrv[0];
-  while (*avp) {
-    if (0 == strcmp(avp[0], "pointIndex")) {
-      snprintf(goog_segname, sizeof(goog_segname), "\\%5.5x", atoi(avp[1]));
-    }
-    avp += 2;
-  }
-
+	goog_over = 1;
+	fprintf(stderr, "DEBUG: %s\n", __FUNCTION__);
 }
 
-void goog_segment(const char* args, const char** unused)
+void goog_over_e(const char* args, const char** unused)
 {
-  waypoint* wpt_tmp;
-
-  wpt_tmp = route_find_waypt_by_name(routehead[goog_segroute], goog_segname);
-  if (wpt_tmp) {
-    xfree(wpt_tmp->shortname);
-    wpt_tmp->shortname = mkshort(desc_handle,args);
-    wpt_tmp->description = xstrdup(args);
-  }
-}
-
-void goog_td_s(const char* args, const char** attrv)
-{
-  const char** avp = &attrv[0];
-  int isdesc = 0;
-  int isseg = 0;
-  while (*avp) {
-    if (0 == strcmp(avp[0], "class")) {
-      isdesc = !strcmp(avp[1], "desc");
-      isseg = !strcmp(avp[1], "dirsegtext");
-    } else if (isdesc && (0 == strcmp(avp[0], "id"))) {
-      goog_segroute = 0;
-      snprintf(goog_segname, sizeof(goog_segname),
-               "\\%5.5x",
-               atoi(avp[1] + 6));
-    } else if (isseg && (0 == strcmp(avp[0], "id"))) {
-      if (strchr(strchr(avp[1],'_')+1,'_')) {
-        goog_segroute = atoi(strchr(avp[1],'_')+1);
-      } else {
-        goog_segroute = 0;
-      }
-      snprintf(goog_segname, sizeof(goog_segname),
-               "\\%5.5x",
-               atoi(strrchr(avp[1],'_') + 1)+routecount[goog_segroute]);
-    }
-    avp += 2;
-  }
-}
-
-void goog_td_b(const char* args, const char** attrv)
-{
-  if (goog_segname[0] == '\\' && !strchr(args, '\xa0')) {
-    if (goog_realname) {
-      xfree(goog_realname);
-      goog_realname = NULL;
-    }
-    goog_realname = (char*) xmalloc(strlen(args)+1);
-    strcpy(goog_realname, args);
-  }
-}
-void goog_td_e(const char* args, const char** attrv)
-{
-  if (goog_segname[0] == '\\' && goog_realname) {
-    goog_segment(goog_realname, attrv);
-  }
-  goog_segname[0] = '\0';
-  if (goog_realname) {
-    xfree(goog_realname);
-    goog_realname = NULL;
-  }
+	goog_over = 0;
+	fprintf(stderr, "DEBUG: %s\n", __FUNCTION__);
 }
 
 static long decode_goog64(char** str)
@@ -217,7 +118,13 @@ void goog_poly_e(const char* args, const char** unused)
   char* str = encoded_points;
   char* lstr = encoded_levels;
 
+	fprintf(stderr, "DEBUG: %s\n", __FUNCTION__);
+
   routehead[goog_segroute] = route_head_alloc();
+  if (goog_over) {
+    routehead[goog_segroute]->rte_name = (char*) xstrdup("overview");
+    routehead[goog_segroute]->rte_desc = (char*) xstrdup("overview");
+  }
   route_add_head(routehead[goog_segroute]);
   routecount[goog_segroute] = serial;
 
@@ -244,12 +151,18 @@ void goog_poly_e(const char* args, const char** unused)
       wpt_tmp->latitude = lat / 100000.0;
       wpt_tmp->longitude = lon / 100000.0;
       wpt_tmp->route_priority=level;
+      /* FIXME no need for name
       wpt_tmp->shortname = (char*) xmalloc(7);
       sprintf(wpt_tmp->shortname, "\\%5.5x", serial++);
+      */
       route_add_wpt(routehead[goog_segroute], wpt_tmp);
     }
   }
 
+  if (encoded_points) {
+    xfree(encoded_points);
+    encoded_points = NULL;
+  }
 }
 
 static void
