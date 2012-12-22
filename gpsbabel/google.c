@@ -123,7 +123,11 @@ void goog_poly_e(const char* args, const char** unused)
       routehead[goog_segroute]->rte_desc = (char*) xmalloc(9);
       sprintf(routehead[goog_segroute]->rte_desc, "Step %d", goog_step);
     } else {
-      routehead[goog_segroute]->rte_desc = instructions;
+      utf_string utf;
+      utf.is_html = 1;
+      utf.utfstring = instructions;
+      routehead[goog_segroute]->rte_desc = strip_html(&utf);
+      xfree(instructions);
       instructions = NULL;
 	}
   }
