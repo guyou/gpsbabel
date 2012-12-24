@@ -564,7 +564,7 @@ vecs_t vec_list[] = {
   {
     &google_vecs,
     "google",
-    "Google Maps XML",
+    "Google Directions XML",
     "xml"
   },
   {
